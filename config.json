@@ -1,0 +1,95 @@
+{
+	"levelProps": {
+		"debug": {
+			"desc": "debug",
+			"style": {
+				"type": "ascii",
+				"fg": ["BLUE", "ALXTERM_BRIGHT"],
+				"bg": ["DEFAULT"],
+				"mode": "ITALIC"
+			},
+			"flush": false,
+			"fatal": false
+		},
+		"info_low": {
+			"desc": "info",
+			"style": {
+				"type": "ascii",
+				"fg": ["DEFAULT", "ALXTERM_BRIGHT"],
+				"bg": ["DEFAULT"],
+				"mode": "DIM"
+			},
+			"flush": false,
+			"fatal": false
+		},
+		"info": {
+			"desc": "info",
+			"style": {
+				"type": "ascii",
+				"fg": ["DEFAULT"],
+				"bg": ["DEFAULT"],
+				"mode": "RESET"
+			},
+			"flush": false,
+			"fatal": false
+		},
+		"warn": {
+			"desc": "warn",
+			"style": {
+				"type": "ascii",
+				"fg": ["RED"],
+				"bg": ["DEFAULT"],
+				"mode": "DIM"
+			},
+			"flush": false,
+			"fatal": false
+		},
+		"error": {
+			"desc": "error",
+			"style": {
+				"type": "ascii",
+				"fg": ["RED"],
+				"bg": ["DEFAULT"],
+				"mode": "RESET"
+			},
+			"flush": true,
+			"fatal": false
+		},
+		"fatal": {
+			"desc": "!FATAL",
+			"style": {
+				"type": "ascii",
+				"fg": ["MAGENTA", "ALXTERM_BRIGHT"],
+				"bg": ["BLACK"],
+				"mode": "BOLD"
+			},
+			"flush": true,
+			"fatal": true
+		}
+	},
+	"funcs": {
+		"debug": {
+			"level": "debug"
+		},
+		"info": {
+			"level": "info"
+		},
+		"warn": {
+			"level": "warn"
+		},
+		"err": {
+			"level": "error"
+		},
+		"fatal": {
+			"level": "fatal"
+		}
+	},
+	"features": {
+		"time": true,
+		"thread": true,
+		"level": true,
+		"file": true
+	},
+	"verbosity": 2,
+	"fileVerbosity": 0
+}
