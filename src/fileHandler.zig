@@ -17,6 +17,7 @@ pub fn FileHandler() type {
         condvar: std.Thread.Condition,
 
         should_flush: bool = false,
+        should_close: bool = false,
         file_name: []const u8,
 
         allocator: std.mem.Allocator,
@@ -33,11 +34,12 @@ pub fn FileHandler() type {
             return fh;
         }
 
-        pub fn deinit(self: *FileHandler()) void {
-            self.allocator.free(self.buffer_a);
-            self.allocator.free(self.buffer_b);
-            defer self.allocator.destroy(self);
-            defer self.allocator.deinit();
+        pub fn deinit(self: *FileHandler()) !void {
+            //self.allocator.free(self.buffer_a);
+            //self.allocator.free(self.buffer_b);
+            self.should_close = true;
+            try self.swapBuffersAndSignal();
+            //defer self.allocator.deinit();
         }
 
         // Add log line to active buffer
@@ -45,7 +47,7 @@ pub fn FileHandler() type {
             //_ = message;
             const buffer = if (self.active_buffer) &self.buffer_a else &self.buffer_b;
             try buffer.appendSlice(try self.allocator.dupe(u8, message));
-            //try buffer.appendSlice(message);
+            try buffer.appendSlice("\n");
 
             // If buffer size reaches threshold, signal flushing and swap buffers
             if (buffer.items.len >= self.threshold and !self.should_flush) {
@@ -89,6 +91,11 @@ pub fn FileHandler() type {
 
                 // Reset flush flag
                 self.should_flush = false;
+
+                if (self.should_close) {
+                    file.close();
+                    break;
+                }
             }
         }
     };

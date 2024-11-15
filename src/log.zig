@@ -57,6 +57,13 @@ pub fn init(path: []const u8) LogError!void {
     };
 }
 
+pub fn deinit() void {
+    if (fileHandler) |fh| fh.deinit() catch |err| {
+        std.debug.print("error: {}", .{err});
+    };
+    if (fileHandlerAllocator) |fha| fha.deinit();
+}
+
 const LevelInfo = struct { m_props: *const LevelProperties, u_level: u32 };
 
 fn getLogLevel(comptime level_name: []const u8) LevelInfo {
@@ -103,7 +110,7 @@ pub fn log(comptime level_name: []const u8, comptime message: []const u8, compti
         add_scope(&list, v);
     }
 
-    const fmttedMsg = fmt.bufPrint(&logbuf, message, wildcards) catch |err| blk: {
+    var fmttedMsg = fmt.bufPrint(&logbuf, message, wildcards) catch |err| blk: {
         if (err == error.OutOfMemory) {
             std.debug.print("api error: message length exceeded defined maximum", .{});
         } else {
@@ -112,7 +119,19 @@ pub fn log(comptime level_name: []const u8, comptime message: []const u8, compti
 
         break :blk message;
     };
-    //const compoundedMsg = fmt.bufPrint(&logbuf, "{s} {s}{s}", .{ list.items, if (s) |_| "" else "| ", fmttedMsg });
+    fmttedMsg = allocator.dupe(u8, fmttedMsg) catch |err| {
+        std.debug.print("error: {}", .{err});
+        return;
+    };
+    const compoundedMsg = fmt.bufPrint(&logbuf, "{s} {s}{s}", .{ list.items, if (s) |_| "" else "| ", fmttedMsg }) catch |err| blk: {
+        if (err == error.OutOfMemory) {
+            std.debug.print("api error: message length exceeded defined maximum", .{});
+        } else {
+            std.debug.print("error: {}", .{err});
+        }
+
+        break :blk message;
+    };
 
     //std.debug.print("test: {s}", .{fmttedMsg});
 
@@ -122,14 +141,14 @@ pub fn log(comptime level_name: []const u8, comptime message: []const u8, compti
         //    return;
         //};
 
-        fh.log(fmttedMsg) catch |err| {
+        fh.log(compoundedMsg) catch |err| {
             std.debug.print("{}", .{err});
         };
     }
 
     const logColor = levelProps.m_props.s_style;
     const defaultColor = comptime makeStyle(@intFromEnum(Color.DEFAULT), @intFromEnum(Color.DEFAULT), TextMode.RESET);
-    writer.print("{s}{s} {s}{s}{s}\n", .{ logColor, list.items, if (s) |_| "" else "| ", fmttedMsg, defaultColor }) catch |err| {
+    writer.print("{s}{s}{s}\n", .{ logColor, compoundedMsg, defaultColor }) catch |err| {
         std.debug.print("error: {}", .{err});
     };
 
