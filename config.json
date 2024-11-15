@@ -64,7 +64,7 @@
 				"mode": "BOLD"
 			},
 			"flush": true,
-			"fatal": false
+			"fatal": true
 		}
 	},
 	"funcs": {

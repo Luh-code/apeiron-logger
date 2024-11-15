@@ -31,8 +31,10 @@ pub const props = user_config.props;
 
 const logFileHandler = @import("fileHandler.zig");
 const FileHandler = logFileHandler.FileHandler;
+pub const generate_log_file_name = logFileHandler.generate_log_file_name;
 var fileHandler: ?*FileHandler() = null;
 var s_filePath: []const u8 = "";
+var s_fileName: []const u8 = "";
 var b_initialized = false;
 
 const stdout = std.io.getStdOut();
@@ -41,17 +43,41 @@ const writer = bufferedWriter.writer();
 
 var fileHandlerAllocator: ?std.heap.ArenaAllocator = null;
 
-pub fn init(path: []const u8) LogError!void {
+fn get_combined_path() ![]const u8 {
+    var filepath = std.ArrayList(u8).init(fileHandlerAllocator.?.allocator());
+    try filepath.appendSlice(s_filePath);
+    if (filepath.items.len == 0) try filepath.appendSlice(".");
+    const lastChar = filepath.items[filepath.items.len - 1];
+    if (lastChar != '/' and lastChar != '\\') {
+        try filepath.appendSlice("/");
+    }
+    try filepath.appendSlice(s_fileName);
+
+    return filepath.toOwnedSlice();
+}
+
+pub fn init(path: []const u8, name: []const u8) LogError!void {
     if (b_initialized) {
         return LogError.AlreadyInitializedError;
     }
     b_initialized = true;
     errdefer b_initialized = false;
 
-    // Create log file and set up logging
     s_filePath = path;
+    s_fileName = name;
+    // Create log folder if needed
+    std.fs.cwd().makePath(s_filePath) catch |err| {
+        if (err == std.posix.MakeDirError.PathAlreadyExists) return;
+        std.debug.print("{}", .{err});
+    };
+
+    // Create log file and set up logging
     fileHandlerAllocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    fileHandler = FileHandler().init(fileHandlerAllocator.?.allocator(), s_filePath) catch |err| {
+    const combinedPath = get_combined_path() catch |err| {
+        std.debug.print("{}", .{err});
+        return;
+    };
+    fileHandler = FileHandler().init(fileHandlerAllocator.?.allocator(), combinedPath) catch |err| {
         std.debug.print("{}", .{err});
         return;
     };
@@ -80,8 +106,6 @@ var logbuf: [1000]u8 = undefined;
 
 pub fn log(comptime level_name: []const u8, comptime message: []const u8, comptime s: ?*const Scope, wildcards: anytype) void {
     const levelProps: LevelInfo = comptime getLogLevel(level_name);
-
-    // TODO: Queue functionality
 
     // If this has performance problems try using a GPA and FBA instead of a page_allocator
     var arena = std.heap.ArenaAllocator.init(std.heap.page_allocator);

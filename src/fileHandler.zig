@@ -1,4 +1,38 @@
 const std = @import("std");
+const fmt = @import("fmt");
+const ctime = @cImport(@cInclude("time.h"));
+const csystime = @cImport(@cInclude("sys/time.h"));
+
+pub fn generate_log_file_name(allocator: std.mem.Allocator, directory: []const u8) ![]const u8 {
+    var time_now: csystime.timeval = undefined;
+    _ = csystime.gettimeofday(&time_now, null);
+    const ms: u32 = @intCast(@divFloor(time_now.tv_usec, 1000));
+
+    var t_str_buf: [9]u8 = undefined; // len of 8 + eod
+    var d_str_buf: [9]u8 = undefined;
+    const t = ctime.time(null);
+    const lt = ctime.localtime(&t);
+    const t_format = "%H-%M-%S";
+    const d_format = "%d_%m_%y";
+    _ = ctime.strftime(&t_str_buf, t_str_buf.len, t_format, lt);
+    _ = ctime.strftime(&d_str_buf, d_str_buf.len, d_format, lt);
+
+    var name = std.ArrayList(u8).init(allocator);
+    _ = directory;
+    //try name.appendSlice(directory);
+    //if (name.items.len == 0) try name.appendSlice(".");
+    //const lastChar = name.items[name.items.len - 1];
+    //if (lastChar != '/' and lastChar != '\\') {
+    //    try name.appendSlice("/");
+    //}
+
+    try name.writer().print(
+        "{s:8}-{d:0>4}-{s:8}.log",
+        .{ t_str_buf[0..8], ms, d_str_buf[0..8] },
+    );
+
+    return name.toOwnedSlice();
+}
 
 // struct for the file logger. Handles fileIO
 pub fn FileHandler() type {
@@ -10,7 +44,7 @@ pub fn FileHandler() type {
         active_buffer: bool = true,
 
         // batch size for automatic flushing
-        threshold: usize = 1024,
+        threshold: usize = 2048,
 
         io_thread: ?std.Thread = null,
         mutex: std.Thread.Mutex,
@@ -35,8 +69,16 @@ pub fn FileHandler() type {
         }
 
         pub fn deinit(self: *FileHandler()) !void {
+            self.mutex.lock();
             self.should_close = true;
-            try self.swapBuffersAndSignal();
+            self.should_flush = true;
+            self.condvar.signal();
+            self.mutex.unlock();
+            //try self.swapBuffersAndSignal();
+
+            if (self.io_thread) |t| {
+                t.join();
+            }
         }
 
         // Add log line to active buffer

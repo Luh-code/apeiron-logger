@@ -11,18 +11,23 @@ fn getSrc() std.builtin.SourceLocation {
 }
 
 pub fn main() void {
-    log.init("test") catch |err| {
+    const allocator = std.heap.page_allocator;
+    const fileName = log.generate_log_file_name(allocator, "./logs") catch |err| {
+        std.debug.print("{}", .{err});
+        return;
+    };
+
+    log.init("./logs", fileName) catch |err| {
         std.debug.print("error: {}\n", .{err});
     };
-    log.init("test") catch |err| {
+    log.init(".", "test") catch |err| {
         std.debug.print("error: {}\n", .{err});
     };
-    log.init("test") catch |err| {
+    log.init(".", "test") catch |err| {
         std.debug.print("error: {}\n", .{err});
     };
     defer log.deinit();
 
-    const allocator = std.heap.page_allocator;
     var list = std.ArrayList(u8).init(allocator);
     defer list.deinit();
 
