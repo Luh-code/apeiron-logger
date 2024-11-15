@@ -35,16 +35,12 @@ pub fn FileHandler() type {
         }
 
         pub fn deinit(self: *FileHandler()) !void {
-            //self.allocator.free(self.buffer_a);
-            //self.allocator.free(self.buffer_b);
             self.should_close = true;
             try self.swapBuffersAndSignal();
-            //defer self.allocator.deinit();
         }
 
         // Add log line to active buffer
         pub fn log(self: *FileHandler(), message: []const u8) !void {
-            //_ = message;
             const buffer = if (self.active_buffer) &self.buffer_a else &self.buffer_b;
             try buffer.appendSlice(try self.allocator.dupe(u8, message));
             try buffer.appendSlice("\n");
@@ -70,7 +66,6 @@ pub fn FileHandler() type {
 
         pub fn logToFile(self: *FileHandler()) !void {
             var file = try std.fs.cwd().createFile(self.file_name, .{});
-            //var file = try std.fs.cwd().openFile(self.file_name, .{ .mode = std.fs.File.OpenMode.read_write });
 
             while (true) {
                 // Lock mutex before checking condition

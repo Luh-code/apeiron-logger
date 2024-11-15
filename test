@@ -1,5 +1,5 @@
-| 11:48:44.0174-15.11.24 |       test(87706) |       debug:0  | [test/] testing logging function
-| 11:48:44.0174-15.11.24 |       test(87706) |        info:1  | testing logging function
-| 11:48:44.0174-15.11.24 |       test(87706) |        info:2  | testing logging function
-| 11:48:44.0174-15.11.24 |       test(87706) |        warn:3  | testing logging function
-| 11:48:44.0174-15.11.24 |       test(87706) |       error:4  | testing logging function
+| 11:53:22.0309-15.11.24 |       test(92055) |       debug:0  | [test/] testing logging function
+| 11:53:22.0309-15.11.24 |       test(92055) |        info:1  | testing logging function
+| 11:53:22.0309-15.11.24 |       test(92055) |        info:2  | testing logging function
+| 11:53:22.0309-15.11.24 |       test(92055) |        warn:3  | testing logging function
+| 11:53:22.0309-15.11.24 |       test(92055) |       error:4  | testing logging function

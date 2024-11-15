@@ -133,14 +133,7 @@ pub fn log(comptime level_name: []const u8, comptime message: []const u8, compti
         break :blk message;
     };
 
-    //std.debug.print("test: {s}", .{fmttedMsg});
-
     if (fileHandler) |fh| {
-        //const fLog: []const u8 = allocator.dupe(u8, fmttedMsg) catch |err| {
-        //    std.debug.print("{}", .{err});
-        //    return;
-        //};
-
         fh.log(compoundedMsg) catch |err| {
             std.debug.print("{}", .{err});
         };
@@ -169,8 +162,8 @@ fn flush() void {
 }
 
 fn fatal(code: u8) void {
-    _ = code;
-    //std.process.exit(code);
+    deinit();
+    std.process.exit(code);
 }
 
 pub fn ldebug(comptime message: []const u8, comptime s: ?*const Scope, wildcards: anytype) void {
