@@ -47,12 +47,12 @@ pub fn init(path: []const u8) LogError!void {
     errdefer b_initialized = false;
 
     // Create log file and set up logging
+    s_filePath = path;
     var fileHandlerAllocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     fileHandler = FileHandler().init(fileHandlerAllocator.allocator(), s_filePath) catch |err| {
         std.debug.print("{}", .{err});
         return;
     };
-    s_filePath = path;
 }
 
 const LevelInfo = struct { m_props: *const LevelProperties, u_level: u32 };
@@ -109,6 +109,10 @@ pub fn log(comptime level_name: []const u8, comptime message: []const u8, compti
         }
 
         break :blk message;
+    };
+
+    fileHandler.?.log(fmttedMsg) catch |err| {
+        std.debug.print("{}", err);
     };
 
     const logColor = levelProps.m_props.s_style;

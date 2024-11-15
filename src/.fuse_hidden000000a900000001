@@ -25,7 +25,7 @@ pub fn FileHandler() type {
             var fh = try allocator.create(FileHandler());
             fh.buffer_a = std.ArrayList(u8).init(allocator);
             fh.buffer_b = std.ArrayList(u8).init(allocator);
-            fh.io_thread = try std.Thread.spawn(.{}, FileHandler().logToFile, .{fh});
+            fh.io_thread = try std.Thread.spawn(.{}, &FileHandler().logToFile, .{fh});
             fh.mutex = .{};
             fh.condvar = .{};
             fh.file_name = file_name;
@@ -36,7 +36,6 @@ pub fn FileHandler() type {
         pub fn deinit(self: *FileHandler()) void {
             self.allocator.free(self.buffer_a);
             self.allocator.free(self.buffer_b);
-            defer self.allocator.destroy(self);
             defer self.allocator.deinit();
         }
 
