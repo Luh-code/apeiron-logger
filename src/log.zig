@@ -29,12 +29,17 @@ const LogError = logErrors.LogError;
 const user_config = @import("user_config");
 pub const props = user_config.props;
 
+const logFileHandler = @import("fileHandler.zig");
+const FileHandler = logFileHandler.FileHandler;
+var fileHandler: ?*FileHandler() = null;
 var s_filePath: []const u8 = "";
 var b_initialized = false;
 
 const stdout = std.io.getStdOut();
 var bufferedWriter = std.io.bufferedWriter(stdout.writer());
 const writer = bufferedWriter.writer();
+
+var fileHandlerAllocator: ?std.heap.ArenaAllocator = null;
 
 pub fn init(path: []const u8) LogError!void {
     if (b_initialized) {
@@ -43,8 +48,20 @@ pub fn init(path: []const u8) LogError!void {
     b_initialized = true;
     errdefer b_initialized = false;
 
-    // TODO: create log file here
+    // Create log file and set up logging
     s_filePath = path;
+    fileHandlerAllocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    fileHandler = FileHandler().init(fileHandlerAllocator.?.allocator(), s_filePath) catch |err| {
+        std.debug.print("{}", .{err});
+        return;
+    };
+}
+
+pub fn deinit() void {
+    if (fileHandler) |fh| fh.deinit() catch |err| {
+        std.debug.print("error: {}", .{err});
+    };
+    if (fileHandlerAllocator) |fha| fha.deinit();
 }
 
 const LevelInfo = struct { m_props: *const LevelProperties, u_level: u32 };
@@ -93,7 +110,20 @@ pub fn log(comptime level_name: []const u8, comptime message: []const u8, compti
         add_scope(&list, v);
     }
 
-    const fmttedMsg = fmt.bufPrint(&logbuf, message, wildcards) catch |err| blk: {
+    var fmttedMsg = fmt.bufPrint(&logbuf, message, wildcards) catch |err| blk: {
+        if (err == error.OutOfMemory) {
+            std.debug.print("api error: message length exceeded defined maximum", .{});
+        } else {
+            std.debug.print("error: {}", .{err});
+        }
+
+        break :blk message;
+    };
+    fmttedMsg = allocator.dupe(u8, fmttedMsg) catch |err| {
+        std.debug.print("error: {}", .{err});
+        return;
+    };
+    const compoundedMsg = fmt.bufPrint(&logbuf, "{s} {s}{s}", .{ list.items, if (s) |_| "" else "| ", fmttedMsg }) catch |err| blk: {
         if (err == error.OutOfMemory) {
             std.debug.print("api error: message length exceeded defined maximum", .{});
         } else {
@@ -103,9 +133,15 @@ pub fn log(comptime level_name: []const u8, comptime message: []const u8, compti
         break :blk message;
     };
 
+    if (fileHandler) |fh| {
+        fh.log(compoundedMsg) catch |err| {
+            std.debug.print("{}", .{err});
+        };
+    }
+
     const logColor = levelProps.m_props.s_style;
     const defaultColor = comptime makeStyle(@intFromEnum(Color.DEFAULT), @intFromEnum(Color.DEFAULT), TextMode.RESET);
-    writer.print("{s}{s} {s}{s}{s}\n", .{ logColor, list.items, if (s) |_| "" else "| ", fmttedMsg, defaultColor }) catch |err| {
+    writer.print("{s}{s}{s}\n", .{ logColor, compoundedMsg, defaultColor }) catch |err| {
         std.debug.print("error: {}", .{err});
     };
 
@@ -120,9 +156,13 @@ fn flush() void {
     bufferedWriter.flush() catch |err| {
         std.debug.print("An error occured while flushing: {}", .{err});
     };
+    fileHandler.?.swapBuffersAndSignal() catch |err| {
+        std.debug.print("error: {}", .{err});
+    };
 }
 
 fn fatal(code: u8) void {
+    deinit();
     std.process.exit(code);
 }
 

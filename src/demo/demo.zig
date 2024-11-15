@@ -20,6 +20,7 @@ pub fn main() void {
     log.init("test") catch |err| {
         std.debug.print("error: {}\n", .{err});
     };
+    defer log.deinit();
 
     const allocator = std.heap.page_allocator;
     var list = std.ArrayList(u8).init(allocator);
