@@ -29,6 +29,9 @@ const LogError = logErrors.LogError;
 const user_config = @import("user_config");
 pub const props = user_config.props;
 
+const file = @import("file.zig");
+const FileHandler = file.FileHandler;
+var fileHandler: ?*FileHandler() = null;
 var s_filePath: []const u8 = "";
 var b_initialized = false;
 
@@ -43,7 +46,12 @@ pub fn init(path: []const u8) LogError!void {
     b_initialized = true;
     errdefer b_initialized = false;
 
-    // TODO: create log file here
+    // Create log file and set up logging
+    var fileHandlerAllocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    fileHandler = FileHandler().init(fileHandlerAllocator.allocator(), s_filePath) catch |err| {
+        std.debug.print("{}", .{err});
+        return;
+    };
     s_filePath = path;
 }
 
