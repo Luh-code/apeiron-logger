@@ -82,7 +82,9 @@ pub fn FileHandler() type {
                 // Write inactive buffer to file
 
                 const buffer_to_write = if (self.active_buffer) &self.buffer_a else &self.buffer_b;
-                try file.writeAll(buffer_to_write.items);
+                file.writeAll(buffer_to_write.items) catch |err| {
+                    std.debug.print("error: {}", .{err});
+                };
                 buffer_to_write.clearAndFree();
 
                 // Reset flush flag

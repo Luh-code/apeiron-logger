@@ -112,6 +112,7 @@ pub fn log(comptime level_name: []const u8, comptime message: []const u8, compti
 
         break :blk message;
     };
+    //const compoundedMsg = fmt.bufPrint(&logbuf, "{s} {s}{s}", .{ list.items, if (s) |_| "" else "| ", fmttedMsg });
 
     //std.debug.print("test: {s}", .{fmttedMsg});
 
