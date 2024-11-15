@@ -36,7 +36,7 @@ pub fn add_time(message: *std.ArrayList(u8)) void {
 
     message.writer().print(
         "| {s:8}.{d:0>4}-{s:8} ",
-        .{ t_str_buf, ms, d_str_buf },
+        .{ t_str_buf[0..8], ms, d_str_buf[0..8] },
     ) catch |err| {
         internal_error(err);
     };
