@@ -26,12 +26,12 @@ pub fn main() void {
     defer list.deinit();
 
     log.add_time(&list);
-    log.add_thread(&list);
-    log.name_thread("main");
-    log.add_thread(&list);
-    log.name_thread("test");
-    log.add_thread(&list);
-    log.add_source(&list, getSrc());
+    //log.add_thread(&list);
+    //log.name_thread("main");
+    //log.add_thread(&list);
+    //log.name_thread("test");
+    //log.add_thread(&list);
+    //log.add_source(&list, getSrc());
     log.add_level(&list, &log.props.a_levelProps[2], 2);
 
     //print("{s}\n", .{list.items});

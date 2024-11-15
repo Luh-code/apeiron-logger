@@ -29,8 +29,8 @@ const LogError = logErrors.LogError;
 const user_config = @import("user_config");
 pub const props = user_config.props;
 
-const file = @import("file.zig");
-const FileHandler = file.FileHandler;
+const logFileHandler = @import("fileHandler.zig");
+const FileHandler = logFileHandler.FileHandler;
 var fileHandler: ?*FileHandler() = null;
 var s_filePath: []const u8 = "";
 var b_initialized = false;
@@ -38,6 +38,8 @@ var b_initialized = false;
 const stdout = std.io.getStdOut();
 var bufferedWriter = std.io.bufferedWriter(stdout.writer());
 const writer = bufferedWriter.writer();
+
+var fileHandlerAllocator: ?std.heap.ArenaAllocator = null;
 
 pub fn init(path: []const u8) LogError!void {
     if (b_initialized) {
@@ -48,8 +50,8 @@ pub fn init(path: []const u8) LogError!void {
 
     // Create log file and set up logging
     s_filePath = path;
-    var fileHandlerAllocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
-    fileHandler = FileHandler().init(fileHandlerAllocator.allocator(), s_filePath) catch |err| {
+    fileHandlerAllocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
+    fileHandler = FileHandler().init(fileHandlerAllocator.?.allocator(), s_filePath) catch |err| {
         std.debug.print("{}", .{err});
         return;
     };
@@ -111,9 +113,18 @@ pub fn log(comptime level_name: []const u8, comptime message: []const u8, compti
         break :blk message;
     };
 
-    fileHandler.?.log(fmttedMsg) catch |err| {
-        std.debug.print("{}", err);
-    };
+    //std.debug.print("test: {s}", .{fmttedMsg});
+
+    if (fileHandler) |fh| {
+        //const fLog: []const u8 = allocator.dupe(u8, fmttedMsg) catch |err| {
+        //    std.debug.print("{}", .{err});
+        //    return;
+        //};
+
+        fh.log(fmttedMsg) catch |err| {
+            std.debug.print("{}", .{err});
+        };
+    }
 
     const logColor = levelProps.m_props.s_style;
     const defaultColor = comptime makeStyle(@intFromEnum(Color.DEFAULT), @intFromEnum(Color.DEFAULT), TextMode.RESET);
@@ -132,10 +143,14 @@ fn flush() void {
     bufferedWriter.flush() catch |err| {
         std.debug.print("An error occured while flushing: {}", .{err});
     };
+    fileHandler.?.swapBuffersAndSignal() catch |err| {
+        std.debug.print("error: {}", .{err});
+    };
 }
 
 fn fatal(code: u8) void {
-    std.process.exit(code);
+    _ = code;
+    //std.process.exit(code);
 }
 
 pub fn ldebug(comptime message: []const u8, comptime s: ?*const Scope, wildcards: anytype) void {

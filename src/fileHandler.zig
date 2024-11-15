@@ -42,8 +42,10 @@ pub fn FileHandler() type {
 
         // Add log line to active buffer
         pub fn log(self: *FileHandler(), message: []const u8) !void {
+            //_ = message;
             const buffer = if (self.active_buffer) &self.buffer_a else &self.buffer_b;
-            try buffer.appendSlice(message);
+            try buffer.appendSlice(try self.allocator.dupe(u8, message));
+            //try buffer.appendSlice(message);
 
             // If buffer size reaches threshold, signal flushing and swap buffers
             if (buffer.items.len >= self.threshold and !self.should_flush) {
