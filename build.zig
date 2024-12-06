@@ -260,7 +260,7 @@ fn generateConfig(allocator: std.mem.Allocator, json: std.json.Value) ![]const u
     return code.toOwnedSlice();
 }
 
-pub fn generate_config_module(b: *std.Build, target: *Build.ResolvedTarget, optimize: *std.builtin.OptimizeMode, path:[]const u8) !Build.Module {
+pub fn generate_config_module(b: *std.Build, target: *const Build.ResolvedTarget, optimize: *const std.builtin.OptimizeMode, path:[]const u8) !Build.Module {
     const file_contents = std.fs.cwd().readFileAlloc(b.allocator, path, 1024*1024) catch |err| {
         std.debug.print("error: {}\n", .{err});
         return;
