@@ -2,7 +2,7 @@ const std = @import("std");
 
 pub const Scope = struct {
     name: []const u8,
-    major: ?*Scope,
+    major: ?*const Scope,
 };
 pub fn format_scope(comptime s: *const Scope, arena: *std.heap.ArenaAllocator) []u8 {
     const allocator = arena.allocator();

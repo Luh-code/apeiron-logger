@@ -56,6 +56,8 @@ fn get_combined_path() ![]const u8 {
     return filepath.toOwnedSlice();
 }
 
+//pub fn init(args)
+
 pub fn init(path: []const u8, name: []const u8) LogError!void {
     if (b_initialized) {
         return LogError.AlreadyInitializedError;

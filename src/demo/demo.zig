@@ -45,9 +45,13 @@ pub fn main() void {
     //log.log("debug", "testing logging function", .{});
     //log.log("error", "testing logging function", .{});
     //log.log("fatal", "testing logging function", .{});
+    const scope0 = Scope{
+        .name = "major",
+        .major = null,
+    };
     const scope = Scope{
         .name = "test",
-        .major = null,
+        .major = &scope0,
     };
 
     log.ldebug("testing logging function", &scope, .{});
