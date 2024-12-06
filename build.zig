@@ -269,7 +269,7 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
     
-    const log = b.addModule("log", .{
+    const log = b.addModule("apeiron-logger", .{
         .root_source_file = b.path("src/log.zig"),
         .target = target,
         .optimize = optimize,

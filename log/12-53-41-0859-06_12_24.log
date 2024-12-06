@@ -1,0 +1,5 @@
+| 12:53:41.0860-06.12.24 |       test(114697) |       debug:0  | [test/major/] testing logging function
+| 12:53:41.0860-06.12.24 |       test(114697) |        info:1  | testing logging function
+| 12:53:41.0860-06.12.24 |       test(114697) |        info:2  | testing logging function
+| 12:53:41.0860-06.12.24 |       test(114697) |        warn:3  | testing logging function
+| 12:53:41.0860-06.12.24 |       test(114697) |       error:4  | testing logging function
