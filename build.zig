@@ -7,7 +7,8 @@ const GenerationError = error {
     KeyNotAvailable,
     InvalidFunctionName,
     ValueNotFound,
-    InternalError
+    InternalError,
+    ModuleGenerationError,
 };
 
 fn generateStructAttr(code: *std.ArrayList(u8), json: std.json.Value, key: []const u8, attr: []const u8, pre: []const u8) !void{
@@ -263,7 +264,7 @@ fn generateConfig(allocator: std.mem.Allocator, json: std.json.Value) ![]const u
 pub fn generate_config_module(b: *std.Build, target: *const Build.ResolvedTarget, optimize: *const std.builtin.OptimizeMode, path:[]const u8) !Build.Module {
     const file_contents = std.fs.cwd().readFileAlloc(b.allocator, path, 1024*1024) catch |err| {
         std.debug.print("error: {}\n", .{err});
-        return;
+        return GenerationError.ModuleGenerationError;
     };
     defer b.allocator.free(file_contents);
 
@@ -274,7 +275,7 @@ pub fn generate_config_module(b: *std.Build, target: *const Build.ResolvedTarget
         .{}
     ) catch |err| {
         std.debug.print("error whilst parsing json: {}\n", .{err});
-        return;
+        return GenerationError.ModuleGenerationError;
     };
     defer parsed.deinit();
 
@@ -282,24 +283,24 @@ pub fn generate_config_module(b: *std.Build, target: *const Build.ResolvedTarget
 
     const generated_code = generateConfig(b.allocator, root) catch |err| {
         std.debug.print("error whilst generating code: {}\n", .{err});
-        return;
+        return GenerationError.ModuleGenerationError;
     };
 
     //std.debug.print("{s}\n", .{generated_code});
     const gen_file_path_abs: []u8 = b.cache_root.join(b.allocator, &[_] []const u8{"user_config.zig"}) catch |err| {
         std.debug.print("error whilst trying to create file path for generated code: {}\n", .{err});
-        return;
+        return GenerationError.ModuleGenerationError;
     };
     const gen_file_path = ".zig-cache/user_config.zig";
     
     var generated_file = std.fs.createFileAbsolute(gen_file_path_abs, .{}) catch |err| {
         std.debug.print("error whilst trying to create file for generated code: {}\n", .{err});
-        return;
+        return GenerationError.ModuleGenerationError;
     };
 
      _ = generated_file.write(generated_code) catch |err| {
         std.debug.print("error whilst trying to write generated code: {}\n", .{err});
-        return;
+        return GenerationError.ModuleGenerationError;
     };
 
     const config = b.addModule("user_config", .{
