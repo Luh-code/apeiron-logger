@@ -324,52 +324,17 @@ pub fn build(b: *std.Build) void {
         .optimize = optimize,
     });
 
-    const config_json_path = b.option([]const u8, "config", "JSON configuration") orelse "";
-    const file_contents = std.fs.cwd().readFileAlloc(b.allocator, config_json_path, 1024 * 1024) catch |err| {
-        std.debug.print("error: {}\n", .{err});
-        return;
-    };
-    defer b.allocator.free(file_contents);
+    if (b.option([]const u8, "config", "JSON configuration")) |config_json_path| {
+        const config = generate_config_module(b, target, optimize, config_json_path) catch |err| {
+            std.debug.print("error: {}\n", .{err});
+            return;
+        };
+        log.addImport("user_config", config);
+        config.addImport("common", common);
+    } else {
+        std.debug.print("No configuration defined\n", .{});
+    }
 
-    const parsed = std.json.parseFromSlice(std.json.Value, b.allocator, file_contents, .{}) catch |err| {
-        std.debug.print("error whilst parsing json: {}\n", .{err});
-        return;
-    };
-    defer parsed.deinit();
-
-    const root = parsed.value;
-
-    const generated_code = generateConfig(b.allocator, root) catch |err| {
-        std.debug.print("error whilst generating code: {}\n", .{err});
-        return;
-    };
-
-    //std.debug.print("{s}\n", .{generated_code});
-    const gen_file_path_abs: []u8 = b.cache_root.join(b.allocator, &[_][]const u8{"user_config.zig"}) catch |err| {
-        std.debug.print("error whilst trying to create file path for generated code: {}\n", .{err});
-        return;
-    };
-    const gen_file_path = ".zig-cache/user_config.zig";
-
-    var generated_file = std.fs.createFileAbsolute(gen_file_path_abs, .{}) catch |err| {
-        std.debug.print("error whilst trying to create file for generated code: {}\n", .{err});
-        return;
-    };
-
-    _ = generated_file.write(generated_code) catch |err| {
-        std.debug.print("error whilst trying to write generated code: {}\n", .{err});
-        return;
-    };
-
-    const config = b.addModule("user_config", .{
-        .root_source_file = b.path(gen_file_path),
-        .target = target,
-        .optimize = optimize,
-    });
-
-    config.addImport("common", common);
-
-    log.addImport("user_config", config);
     log.addImport("common", common);
 
     exe.root_module.addImport("log", log);
