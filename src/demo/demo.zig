@@ -16,16 +16,18 @@ pub fn main() void {
         std.debug.print("{}", .{err});
         return;
     };
+    _ = fileName;
 
-    log.init("./logs", fileName) catch |err| {
+    //log.init("./logs", fileName) catch |err| {
+    //    std.debug.print("error: {}\n", .{err});
+    //};
+    var args = try std.process.argsWithAllocator(allocator);
+    log.init(allocator, &args) catch |err| {
         std.debug.print("error: {}\n", .{err});
     };
-    log.init(".", "test") catch |err| {
-        std.debug.print("error: {}\n", .{err});
-    };
-    log.init(".", "test") catch |err| {
-        std.debug.print("error: {}\n", .{err});
-    };
+    //log.init(".", "test") catch |err| {
+    //    std.debug.print("error: {}\n", .{err});
+    //};
     defer log.deinit();
 
     var list = std.ArrayList(u8).init(allocator);
