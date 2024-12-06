@@ -1,5 +1,5 @@
 {
-  description = "A simple Nix flake to compile a Zig program";
+  description = "The flake to compile apeiron-logger";
 
   inputs = {
     nixpkgs.url = "github:NixOS/nixpkgs/nixos-unstable";
@@ -14,7 +14,7 @@
       {
         packages = {
           apeiron-core = pkgs.stdenv.mkDerivation {
-            pname = "apeiron";
+            pname = "apeiron-logger";
             version = "0.1.0";
 
             src = ./.;
