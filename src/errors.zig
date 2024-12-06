@@ -6,4 +6,6 @@ pub const LogError = error{
     MessageLengthExceededDefinedMaximum,
     FileNameGenerationError,
     VerbosityParsingError,
+    FileNameError,
+    FileHandlerError,
 };

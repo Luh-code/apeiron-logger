@@ -57,6 +57,30 @@ fn get_combined_path() ![]const u8 {
     return filepath.toOwnedSlice();
 }
 
+fn log_rotation(path: []const u8) !void {
+    {
+        std.fs.cwd().access(path, .{}) catch {
+            return;
+        };
+    }
+
+    var buffer: [std.fs.MAX_PATH_BYTES]u8 = undefined;
+    const old_filename = try std.fmt.bufPrint(&buffer, "{s}.old", .{path});
+
+    var oldExists = true;
+    {
+        std.fs.cwd().access(old_filename, .{}) catch {
+            oldExists = false;
+        };
+    }
+
+    if (oldExists) {
+        try std.fs.cwd().deleteFile(old_filename);
+    }
+
+    try std.fs.cwd().rename(path, old_filename);
+}
+
 var u_verbosity: u32 = props.u_verbosity;
 var u_fileVerbosity: u32 = props.u_fileVerbosity;
 pub fn init(allocator: std.mem.Allocator, args: *process.ArgIterator) LogError!void {
@@ -128,11 +152,19 @@ pub fn init(allocator: std.mem.Allocator, args: *process.ArgIterator) LogError!v
     fileHandlerAllocator = std.heap.ArenaAllocator.init(std.heap.page_allocator);
     const combinedPath = get_combined_path() catch |err| {
         std.debug.print("{}", .{err});
-        return;
+        return LogError.FileNameError;
     };
+
+    // Check if file exists, and if so, rename it to "*.old". If that already exists, truncate
+    log_rotation(combinedPath) catch |err| {
+        std.debug.print("error: {}", .{err});
+        return LogError.FileNameError;
+    };
+
+    // Create FileHandler
     fileHandler = FileHandler().init(fileHandlerAllocator.?.allocator(), combinedPath) catch |err| {
         std.debug.print("{}", .{err});
-        return;
+        return LogError.FileHandlerError;
     };
 }
 
