@@ -1,7 +1,7 @@
 const std = @import("std");
 const Build = std.Build;
 
-const GenerationError = error {
+const GenerationError = error{
     ExpectedKeyNotFound,
     InvalidValueException,
     KeyNotAvailable,
@@ -11,7 +11,7 @@ const GenerationError = error {
     ModuleGenerationError,
 };
 
-fn generateStructAttr(code: *std.ArrayList(u8), json: std.json.Value, key: []const u8, attr: []const u8, pre: []const u8) !void{
+fn generateStructAttr(code: *std.ArrayList(u8), json: std.json.Value, key: []const u8, attr: []const u8, pre: []const u8) !void {
     try code.appendSlice(pre);
     try code.appendSlice(".");
     try code.appendSlice(attr);
@@ -70,7 +70,7 @@ fn addFeature(code: *std.ArrayList(u8), feature: []const u8, json: std.json.Valu
     }
 }
 
-fn generateConfig(allocator: std.mem.Allocator, json: std.json.Value) ![]const u8{
+fn generateConfig(allocator: std.mem.Allocator, json: std.json.Value) ![]const u8 {
     var code = std.ArrayList(u8).init(allocator);
     defer code.deinit();
 
@@ -106,7 +106,7 @@ fn generateConfig(allocator: std.mem.Allocator, json: std.json.Value) ![]const u
                     return GenerationError.ExpectedKeyNotFound;
                 };
                 const textMode = if (style.object.get("mode")) |mode| mode.string else {
-                    return GenerationError.ExpectedKeyNotFound; 
+                    return GenerationError.ExpectedKeyNotFound;
                 };
                 if (style.object.get("type")) |styleType| {
                     const stype = styleType.string;
@@ -161,17 +161,11 @@ fn generateConfig(allocator: std.mem.Allocator, json: std.json.Value) ![]const u
         return GenerationError.ExpectedKeyNotFound;
     }
 
-    try code.appendSlice("\t},\n"); 
+    try code.appendSlice("\t},\n");
     try code.appendSlice("\t.m_specFuncs = .{\n");
 
     if (json.object.get("funcs")) |funcs| {
-        const FuncNames = enum {
-            debug,
-            info,
-            warn,
-            err,
-            fatal
-        }; 
+        const FuncNames = enum { debug, info, warn, err, fatal };
 
         var debugSet: bool = false;
         var infoSet: bool = false;
@@ -218,7 +212,7 @@ fn generateConfig(allocator: std.mem.Allocator, json: std.json.Value) ![]const u
 
     try code.appendSlice("\t},\n");
     try code.appendSlice("\t.m_features = .{\n");
-    
+
     if (json.object.get("features")) |features| {
         try addFeature(&code, "time", features);
         try addFeature(&code, "thread", features);
@@ -257,23 +251,18 @@ fn generateConfig(allocator: std.mem.Allocator, json: std.json.Value) ![]const u
     }
 
     try code.appendSlice("};\n");
-    
+
     return code.toOwnedSlice();
 }
 
-pub fn generate_config_module(b: *std.Build, target: *Build.ResolvedTarget, optimize: *const std.builtin.OptimizeMode, path:[]const u8) !Build.Module {
-    const file_contents = std.fs.cwd().readFileAlloc(b.allocator, path, 1024*1024) catch |err| {
+pub fn generate_config_module(b: *std.Build, target: Build.ResolvedTarget, optimize: std.builtin.OptimizeMode, path: []const u8) !*Build.Module {
+    const file_contents = std.fs.cwd().readFileAlloc(b.allocator, path, 1024 * 1024) catch |err| {
         std.debug.print("error: {}\n", .{err});
         return GenerationError.ModuleGenerationError;
     };
     defer b.allocator.free(file_contents);
 
-    const parsed = std.json.parseFromSlice(
-        std.json.Value,
-        b.allocator,
-        file_contents,
-        .{}
-    ) catch |err| {
+    const parsed = std.json.parseFromSlice(std.json.Value, b.allocator, file_contents, .{}) catch |err| {
         std.debug.print("error whilst parsing json: {}\n", .{err});
         return GenerationError.ModuleGenerationError;
     };
@@ -287,18 +276,18 @@ pub fn generate_config_module(b: *std.Build, target: *Build.ResolvedTarget, opti
     };
 
     //std.debug.print("{s}\n", .{generated_code});
-    const gen_file_path_abs: []u8 = b.cache_root.join(b.allocator, &[_] []const u8{"user_config.zig"}) catch |err| {
+    const gen_file_path_abs: []u8 = b.cache_root.join(b.allocator, &[_][]const u8{"user_config.zig"}) catch |err| {
         std.debug.print("error whilst trying to create file path for generated code: {}\n", .{err});
         return GenerationError.ModuleGenerationError;
     };
     const gen_file_path = ".zig-cache/user_config.zig";
-    
+
     var generated_file = std.fs.createFileAbsolute(gen_file_path_abs, .{}) catch |err| {
         std.debug.print("error whilst trying to create file for generated code: {}\n", .{err});
         return GenerationError.ModuleGenerationError;
     };
 
-     _ = generated_file.write(generated_code) catch |err| {
+    _ = generated_file.write(generated_code) catch |err| {
         std.debug.print("error whilst trying to write generated code: {}\n", .{err});
         return GenerationError.ModuleGenerationError;
     };
@@ -308,7 +297,7 @@ pub fn generate_config_module(b: *std.Build, target: *Build.ResolvedTarget, opti
         .target = target,
         .optimize = optimize,
     });
-    
+
     return config;
 }
 
@@ -321,7 +310,7 @@ pub fn build(b: *std.Build) void {
         .target = target,
         .optimize = optimize,
     });
-    
+
     const log = b.addModule("apeiron-logger", .{
         .root_source_file = b.path("src/log.zig"),
         .target = target,
@@ -336,18 +325,13 @@ pub fn build(b: *std.Build) void {
     });
 
     const config_json_path = b.option([]const u8, "config", "JSON configuration") orelse "";
-    const file_contents = std.fs.cwd().readFileAlloc(b.allocator, config_json_path, 1024*1024) catch |err| {
+    const file_contents = std.fs.cwd().readFileAlloc(b.allocator, config_json_path, 1024 * 1024) catch |err| {
         std.debug.print("error: {}\n", .{err});
         return;
     };
     defer b.allocator.free(file_contents);
 
-    const parsed = std.json.parseFromSlice(
-        std.json.Value,
-        b.allocator,
-        file_contents,
-        .{}
-    ) catch |err| {
+    const parsed = std.json.parseFromSlice(std.json.Value, b.allocator, file_contents, .{}) catch |err| {
         std.debug.print("error whilst parsing json: {}\n", .{err});
         return;
     };
@@ -361,18 +345,18 @@ pub fn build(b: *std.Build) void {
     };
 
     //std.debug.print("{s}\n", .{generated_code});
-    const gen_file_path_abs: []u8 = b.cache_root.join(b.allocator, &[_] []const u8{"user_config.zig"}) catch |err| {
+    const gen_file_path_abs: []u8 = b.cache_root.join(b.allocator, &[_][]const u8{"user_config.zig"}) catch |err| {
         std.debug.print("error whilst trying to create file path for generated code: {}\n", .{err});
         return;
     };
     const gen_file_path = ".zig-cache/user_config.zig";
-    
+
     var generated_file = std.fs.createFileAbsolute(gen_file_path_abs, .{}) catch |err| {
         std.debug.print("error whilst trying to create file for generated code: {}\n", .{err});
         return;
     };
 
-     _ = generated_file.write(generated_code) catch |err| {
+    _ = generated_file.write(generated_code) catch |err| {
         std.debug.print("error whilst trying to write generated code: {}\n", .{err});
         return;
     };
