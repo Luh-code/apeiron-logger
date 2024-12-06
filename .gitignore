@@ -2,3 +2,5 @@
 zig-out
 result
 logs
+test.log
+test.log.old
