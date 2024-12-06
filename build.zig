@@ -1,5 +1,5 @@
 const std = @import("std");
-const Build = @import("Build");
+const Build = std.Build;
 
 const GenerationError = error {
     ExpectedKeyNotFound,
