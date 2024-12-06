@@ -158,16 +158,20 @@ pub fn log(comptime level_name: []const u8, comptime message: []const u8, compti
     };
 
     if (fileHandler) |fh| {
-        fh.log(compoundedMsg) catch |err| {
-            std.debug.print("{}", .{err});
-        };
+        if (props.u_fileVerbosity <= levelProps.u_level) {
+            fh.log(compoundedMsg) catch |err| {
+                std.debug.print("{}", .{err});
+            };
+        }
     }
 
-    const logColor = levelProps.m_props.s_style;
-    const defaultColor = comptime makeStyle(@intFromEnum(Color.DEFAULT), @intFromEnum(Color.DEFAULT), TextMode.RESET);
-    writer.print("{s}{s}{s}\n", .{ logColor, compoundedMsg, defaultColor }) catch |err| {
-        std.debug.print("error: {}", .{err});
-    };
+    if (props.u_verbosity <= levelProps.u_level) {
+        const logColor = levelProps.m_props.s_style;
+        const defaultColor = comptime makeStyle(@intFromEnum(Color.DEFAULT), @intFromEnum(Color.DEFAULT), TextMode.RESET);
+        writer.print("{s}{s}{s}\n", .{ logColor, compoundedMsg, defaultColor }) catch |err| {
+            std.debug.print("error: {}", .{err});
+        };
+    }
 
     if (levelProps.m_props.b_flush) flush();
     if (levelProps.m_props.b_fatal) {
