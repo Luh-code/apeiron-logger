@@ -331,8 +331,6 @@ pub fn build(b: *std.Build) void {
         };
         log.addImport("user_config", config);
         config.addImport("common", common);
-    } else {
-        std.debug.print("No configuration defined\n", .{});
     }
 
     log.addImport("common", common);
