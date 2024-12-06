@@ -1,4 +1,5 @@
 const std = @import("std");
+const Build = @import("Build");
 
 const GenerationError = error {
     ExpectedKeyNotFound,
@@ -257,6 +258,57 @@ fn generateConfig(allocator: std.mem.Allocator, json: std.json.Value) ![]const u
     try code.appendSlice("};\n");
     
     return code.toOwnedSlice();
+}
+
+pub fn generate_config_module(b: *std.Build, target: *std.Build.TargetOptions, optimize: *std.Build.OptimizeOption, path:[]const u8) !Build.Module {
+    const file_contents = std.fs.cwd().readFileAlloc(b.allocator, path, 1024*1024) catch |err| {
+        std.debug.print("error: {}\n", .{err});
+        return;
+    };
+    defer b.allocator.free(file_contents);
+
+    const parsed = std.json.parseFromSlice(
+        std.json.Value,
+        b.allocator,
+        file_contents,
+        .{}
+    ) catch |err| {
+        std.debug.print("error whilst parsing json: {}\n", .{err});
+        return;
+    };
+    defer parsed.deinit();
+
+    const root = parsed.value;
+
+    const generated_code = generateConfig(b.allocator, root) catch |err| {
+        std.debug.print("error whilst generating code: {}\n", .{err});
+        return;
+    };
+
+    //std.debug.print("{s}\n", .{generated_code});
+    const gen_file_path_abs: []u8 = b.cache_root.join(b.allocator, &[_] []const u8{"user_config.zig"}) catch |err| {
+        std.debug.print("error whilst trying to create file path for generated code: {}\n", .{err});
+        return;
+    };
+    const gen_file_path = ".zig-cache/user_config.zig";
+    
+    var generated_file = std.fs.createFileAbsolute(gen_file_path_abs, .{}) catch |err| {
+        std.debug.print("error whilst trying to create file for generated code: {}\n", .{err});
+        return;
+    };
+
+     _ = generated_file.write(generated_code) catch |err| {
+        std.debug.print("error whilst trying to write generated code: {}\n", .{err});
+        return;
+    };
+
+    const config = b.addModule("user_config", .{
+        .root_source_file = b.path(gen_file_path),
+        .target = target,
+        .optimize = optimize,
+    });
+    
+    return config;
 }
 
 pub fn build(b: *std.Build) void {
