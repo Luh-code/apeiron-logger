@@ -11,3 +11,8 @@ Verbosity, as well as file name and location can be overridden by using command-
 "-fv", "--file-verbosity" - specify a verbosity for logging to file
 
 If there is ever a case where a filename is already used, logs get rotated to "\*.old" and then get truncated.
+
+I do not recommend anyone trying to learn from this code. It is an absolute mess, this project was mostly just me learning how Zig works :).  
+This will be completely redone at some point - but that point is not right now. Use at your own risk.
+
+Also the maximum lien length is 1000 chars minus the whole metadata like time and co.
