@@ -1,3 +1,5 @@
+## Disclaimer
+Quite badly written, will be overhauled at some point. Currently very annoying to set up, will be reworked at some point as well.
 # Apeiron-logger
 Apeiron-logger is a performance oriented, highly customizable logger written in Zig.
 
